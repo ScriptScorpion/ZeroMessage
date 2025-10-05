@@ -10,8 +10,8 @@ add_compile_options(
     -O1
     -pthread
 )
-add_executable(client main_client.cpp)
-add_executable(server server.cpp)
+add_executable(client src/main_client.cpp)
+add_executable(server src/server.cpp)
 
 add_custom_target(clear
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/CMakeFiles

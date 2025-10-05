@@ -49,7 +49,7 @@ class ChatServer {
 
 			sockaddr_in Server_addr {};
 			Server_addr.sin_family = AF_INET;
-			Server_addr.sin_addr.s_addr = INADDR_ANY; // IP-address(to set manually, type: `inet_addr("192.168.1.1")` instead of INADDR_ANY)
+			Server_addr.sin_addr.s_addr = INADDR_ANY; // accept any IP-address (to set only connections from specific IP, type: `inet_pton(AF_INET, IP.c_str(), &Server_addr.sin_addr)`
 			Server_addr.sin_port = htons(port); // Port
 
 			if (bind(Server_socket, (sockaddr*)&Server_addr, sizeof(Server_addr)) < 0) {
