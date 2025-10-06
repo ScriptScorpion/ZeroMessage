@@ -27,14 +27,14 @@ class NetworkChecker {
 		    #endif
 		}
 	public:
-		NetworkChecker() {
+		NetworkChecker() { // Constructor
 		    #ifdef _WIN32
 		        int output = WSAStartup(MAKEWORD(2, 2), &wsaData);
 		        winsockInitialized = (output == 0);
 		    #endif
 		}
 
-		~NetworkChecker() {
+		~NetworkChecker() { // Destructor
 		    #ifdef _WIN32
 		    if (winsockInitialized) {
 		        WSACleanup();
@@ -49,8 +49,8 @@ class NetworkChecker {
 		        return false;
 		    }
 
-		    // Host IP(not normal variantion(not 127.0.0.1 kind of variantion))_
-		    struct hostent* Server = gethostbyname(host.c_str());
+		    // Host IP(not normal variantion(not 127.0.0.1 kind of variantion, instead of this just numbers))_
+		    hostent* Server = gethostbyname(host.c_str());
 		    if (Server == NULL) {
 		        closeSocket(sock);
 		        return false;
@@ -73,7 +73,7 @@ class NetworkChecker {
 		        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 		    #endif
 
-		    int connection_result = connect(sock, (sockaddr*)&Server_addr, sizeof(Server_addr));
+		    int connection_result = connect(sock, (sockaddr*)&Server_addr, sizeof(Server_addr)); // connecting to server which is server url
 
 		    bool result = (connection_result == 0);
 		    
@@ -81,11 +81,11 @@ class NetworkChecker {
 		        
 		        std::string http_request = "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n";
 		        
-		        int send_result = send(sock, http_request.c_str(), http_request.length(), 0);
+		        int send_result = send(sock, http_request.c_str(), http_request.length(), 0); // sending http request
 		        
 		        if (send_result > 0) {
 		            char buffer[17];
-		            int receive_result = recv(sock, buffer, sizeof(buffer) - 1, 0);
+		            int receive_result = recv(sock, buffer, sizeof(buffer) - 1, 0); // receiving output into buffer, and reading only status code
 		            
 		            if (receive_result > 0) {
 		                buffer[receive_result] = '\0';
