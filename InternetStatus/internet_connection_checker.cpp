@@ -19,7 +19,6 @@
 
 class NetworkChecker {
 	private:
-		int sock_m = 0;
 		void closeSocket(const int sock) {
 		    #ifdef _WIN32
 		        closesocket(sock);
@@ -30,13 +29,12 @@ class NetworkChecker {
 	public:
 		NetworkChecker() {
 		    #ifdef _WIN32
-		        int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-		        winsockInitialized = (result == 0);
+		        int output = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		        winsockInitialized = (output == 0);
 		    #endif
 		}
 
 		~NetworkChecker() {
-		    closeSocket(sock_m);
 		    #ifdef _WIN32
 		    if (winsockInitialized) {
 		        WSACleanup();
@@ -47,7 +45,6 @@ class NetworkChecker {
 		bool checkInternetConnection(const std::string& host = "example.com", const int port = 80, const int timeout_seconds = 5) {
 		    
 		    int sock = socket(AF_INET, SOCK_STREAM, 0);
-		    sock_m = sock; 
 		    if (sock <= 0) {
 		        return false;
 		    }
@@ -96,7 +93,7 @@ class NetworkChecker {
 		            }
 		        }
 		    }
-
+		    closeSocket(sock);
 		    return result;
 		}
 };
