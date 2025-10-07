@@ -1,0 +1,8 @@
+# This guide is for peoples who are moved from Assembly language to C++ language
+# Assembly data types can translate to C++ like this:
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned long DWORD;
+typedef unsigned long long QWORD;
+
+

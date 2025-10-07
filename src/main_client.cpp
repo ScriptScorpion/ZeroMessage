@@ -8,7 +8,7 @@
 
 #define SUCCESS 0
 
-#ifdef (__unix__)
+#ifdef __unix__
     #define INVALID_SOCKET -1
     #define SOCKET_ERROR -1
     #include <sys/socket.h> // for creating socket, for binding address, for acceptance, for connecting to the server
@@ -137,7 +137,7 @@ int main() {
     std::cout << "Enter Port of the server: ";
     std::cin >> port;
     if (!std::cin || port <= 0) {
-        std::cerr << "Error: port can be only number greater than 0\n";
+        std::cerr << "Error: Invalid input" << std::endl;
         return -1;
     }
     std::cin.ignore(); // remove '\n' character from buffer 

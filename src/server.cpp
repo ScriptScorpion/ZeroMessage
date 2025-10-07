@@ -172,7 +172,7 @@ int main() {
 	std::cout << "Enter port on which to start the server: ";
 	std::cin >> port;
 	if (!std::cin || port <= 0) {
-		std::cerr << "Input error" << std::endl;
+		std::cerr << "Error: Invalid input" << std::endl;
 		return -1;
 	}
     bool output = server.start(port); // port to start the server
