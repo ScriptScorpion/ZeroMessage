@@ -9,6 +9,8 @@
 #define SUCCESS 0
 
 #if defined(__unix__)
+    #define INVALID_SOCKET -1
+    #define SOCKET_ERROR -1
     #include <sys/socket.h> // for creating socket, for binding address, for acceptance, for connecting to the server
     #include <arpa/inet.h> // convertation from string to struct
     #include <unistd.h> // system calls: close socket, send data, receive data.
@@ -46,13 +48,14 @@ class App {
         }
         void send_to_server(const std::string &message) {
             if (allowed_to_send) {
-                if (send(sock_m, message.c_str(), message.length(), 0) < 0) {
-                    std::exit(); // fix this TODO
+                if (send(sock_m, message.c_str(), message.length(), 0) == SOCKET_ERROR) {
+                    std::cerr << "\nError: failed to send a message\n";
+                    return;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             else {
-                std::cerr << "Error: failed to connect to the server";
+                std::cerr << "Error: failed to connect to the server\n";
                 std::exit(-1);
             }
         }
@@ -63,7 +66,7 @@ class App {
             #endif
 
             int sock = socket(AF_INET, SOCK_STREAM, 0);
-            if (sock != SUCCESS) {
+            if (sock == INVALID_SOCKET) {
                 return;
             }
 
@@ -76,9 +79,9 @@ class App {
             }
         }
         void create_msg(const std::string &message) {
-             msg = message;
-             std::string full_msg = "[" + str_id + "]: " + message;
-             send_to_server(full_msg);
+            msg = message;
+            std::string full_msg = "[" + str_id + "]: " + message;
+            send_to_server(full_msg);
         }
         void get_msgs() {
             receive_thread = std::thread([this]() { // [this] because to capture all fileds of class

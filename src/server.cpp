@@ -5,13 +5,15 @@
 #include <cstring>
 #include <algorithm>
 
-#define INVALID_SOCKET -1
 #define SUCCESS 0
+
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #pragma comment(lib, "ws2_32.lib")
 #else
+    #define INVALID_SOCKET -1
+    #define SOCKET_ERROR -1
     #include <sys/socket.h>
     #include <netinet/in.h>
     #include <ifaddrs.h>
@@ -44,7 +46,7 @@ class ChatServer {
 			}
 
 			int opt = 1;
-			if (setsockopt(Server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) != SUCCESS) {
+			if (setsockopt(Server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) == SOCKET_ERROR) {
 				std::cerr << "Setsockopt failed" << std::endl;
 				return false;
 			}
@@ -54,12 +56,12 @@ class ChatServer {
 			Server_addr.sin_addr.s_addr = INADDR_ANY; // accept any IP-address (to set only connections from specific IP, type: `inet_pton(AF_INET, IP.c_str(), &Server_addr.sin_addr)`
 			Server_addr.sin_port = htons(port); // Port
 
-			if (bind(Server_socket, (sockaddr*)&Server_addr, sizeof(Server_addr)) != SUCCESS) { // this sets server IP address
+			if (bind(Server_socket, (sockaddr*)&Server_addr, sizeof(Server_addr)) == SOCKET_ERROR) { // this sets server IP address
 				std::cerr << "Bind failed" << std::endl;
 				return false;
 			}
 
-			if (listen(Server_socket, 5) != SUCCESS) {
+			if (listen(Server_socket, 5) == INVALID_SOCKET) {
 				std::cerr << "Listen failed" << std::endl;
 				return false;
 			}
@@ -103,9 +105,11 @@ class ChatServer {
 				#endif
 
 				int Client_socket = accept(Server_socket, (sockaddr*)&Client_addr, &addr_len);
-				if (Client_socket != SUCCESS) {
-				    if (running) std::cerr << "Accept failed" << std::endl;
-				    continue;
+				if (Client_socket == INVALID_SOCKET) {
+				    	if (running)  {
+				    		std::cerr << "Accept failed" << std::endl;
+				    	}
+				     continue;
 				}
 
 				clients.push_back(Client_socket);
@@ -165,7 +169,7 @@ class ChatServer {
 };
 
 int main() {
-    ChatServer server;
+     ChatServer server;
 	int port = 0;
 	std::cout << "Enter port on which to start the server: ";
 	std::cin >> port;
@@ -173,14 +177,14 @@ int main() {
 		std::cerr << "Input error" << std::endl;
 		return -1;
 	}
-    bool output = server.start(port); // port to start the server
+     bool output = server.start(port); // port to start the server
 	if (!output) {
 		server.stop();
 		return -1;
 	}
-    std::cout << "Press Enter to stop server..." << std::endl;
+     std::cout << "Press Enter to stop server..." << std::endl;
 	std::cin.get();
     
-    server.stop();
-    return 0;
+     server.stop();
+     return 0;
 }
