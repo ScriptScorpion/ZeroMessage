@@ -61,7 +61,7 @@ class ChatServer {
 				return false;
 			}
 
-			if (listen(Server_socket, 5) == INVALID_SOCKET) {
+			if (listen(Server_socket, 5) == SOCKET_ERROR) {
 				std::cerr << "Listen failed" << std::endl;
 				return false;
 			}
