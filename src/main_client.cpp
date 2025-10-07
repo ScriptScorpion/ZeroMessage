@@ -8,7 +8,7 @@
 
 #define SUCCESS 0
 
-#if defined(__unix__)
+#ifdef (__unix__)
     #define INVALID_SOCKET -1
     #define SOCKET_ERROR -1
     #include <sys/socket.h> // for creating socket, for binding address, for acceptance, for connecting to the server
@@ -55,7 +55,13 @@ class App {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             else {
-                std::cerr << "Error: failed to connect to the server\n";
+                std::cerr << "\nError: failed to connect to the server\n";
+                #ifdef _WIN32
+                    closesocket(sock_m);
+                    WSACleanup();
+                #else
+                    close(sock_m);
+                #endif
                 std::exit(-1);
             }
         }
@@ -131,7 +137,7 @@ int main() {
     std::cout << "Enter Port of the server: ";
     std::cin >> port;
     if (!std::cin || port <= 0) {
-        std::cerr << "Error: port can be only number greater than 0 \n";
+        std::cerr << "Error: port can be only number greater than 0\n";
         return -1;
     }
     std::cin.ignore(); // remove '\n' character from buffer 

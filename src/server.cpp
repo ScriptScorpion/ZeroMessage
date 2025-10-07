@@ -106,9 +106,7 @@ class ChatServer {
 
 				int Client_socket = accept(Server_socket, (sockaddr*)&Client_addr, &addr_len);
 				if (Client_socket == INVALID_SOCKET) {
-				    	if (running)  {
-				    		std::cerr << "Accept failed" << std::endl;
-				    	}
+				    std::cerr << "Accept failed" << std::endl;
 				     continue;
 				}
 
@@ -169,7 +167,7 @@ class ChatServer {
 };
 
 int main() {
-     ChatServer server;
+    ChatServer server;
 	int port = 0;
 	std::cout << "Enter port on which to start the server: ";
 	std::cin >> port;
@@ -177,14 +175,14 @@ int main() {
 		std::cerr << "Input error" << std::endl;
 		return -1;
 	}
-     bool output = server.start(port); // port to start the server
+    bool output = server.start(port); // port to start the server
 	if (!output) {
 		server.stop();
 		return -1;
 	}
-     std::cout << "Press Enter to stop server..." << std::endl;
+    std::cout << "Press Enter to stop server..." << std::endl;
 	std::cin.get();
     
-     server.stop();
-     return 0;
+    server.stop();
+    return 0;
 }
