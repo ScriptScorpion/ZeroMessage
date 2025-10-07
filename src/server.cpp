@@ -4,6 +4,9 @@
 #include <thread>
 #include <cstring>
 #include <algorithm>
+
+#define INVALID_SOCKET -1
+#define SUCCESS 0
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
@@ -16,10 +19,9 @@
     #include <netdb.h>
     #include <arpa/inet.h>
 #endif
-
 class ChatServer {
 	private:
-	    int Server_socket = -1;
+	    int Server_socket = INVALID_SOCKET;
 	    std::vector<int> clients {};
 		std::atomic <bool> running = false;
 	    std::string ip_id = "";
@@ -29,20 +31,20 @@ class ChatServer {
 	    bool start(const int port) {
 			#ifdef _WIN32
 				WSADATA wsaData;
-				if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+				if (WSAStartup(MAKEWORD(2, 2), &wsaData) != SUCCESS) {
 				    std::cerr << "WSAStartup failed" << std::endl;
 				    return false;
 				}
 			#endif
 
 			Server_socket = socket(AF_INET, SOCK_STREAM, 0);
-			if (Server_socket == -1) {
+			if (Server_socket == INVALID_SOCKET) {
 				std::cerr << "Socket creation failed" << std::endl;
 				return false;
 			}
 
 			int opt = 1;
-			if (setsockopt(Server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) < 0) {
+			if (setsockopt(Server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)) != SUCCESS) {
 				std::cerr << "Setsockopt failed" << std::endl;
 				return false;
 			}
@@ -52,12 +54,12 @@ class ChatServer {
 			Server_addr.sin_addr.s_addr = INADDR_ANY; // accept any IP-address (to set only connections from specific IP, type: `inet_pton(AF_INET, IP.c_str(), &Server_addr.sin_addr)`
 			Server_addr.sin_port = htons(port); // Port
 
-			if (bind(Server_socket, (sockaddr*)&Server_addr, sizeof(Server_addr)) < 0) {
+			if (bind(Server_socket, (sockaddr*)&Server_addr, sizeof(Server_addr)) != SUCCESS) { // this sets server IP address
 				std::cerr << "Bind failed" << std::endl;
 				return false;
 			}
 
-			if (listen(Server_socket, 5) < 0) {
+			if (listen(Server_socket, 5) != SUCCESS) {
 				std::cerr << "Listen failed" << std::endl;
 				return false;
 			}
@@ -81,15 +83,13 @@ class ChatServer {
 			}
 			clients.clear();
 
-			if (Server_socket != -1) {
-				#ifdef _WIN32
-				    closesocket(Server_socket);
-				    WSACleanup();
-				#else
-				    close(Server_socket);
-				#endif
-				Server_socket = -1;
-			}
+			#ifdef _WIN32
+			    closesocket(Server_socket);
+			    WSACleanup();
+			#else
+				close(Server_socket);
+			#endif
+			
 	    }
 
 	private:
@@ -103,7 +103,7 @@ class ChatServer {
 				#endif
 
 				int Client_socket = accept(Server_socket, (sockaddr*)&Client_addr, &addr_len);
-				if (Client_socket < 0) {
+				if (Client_socket != SUCCESS) {
 				    if (running) std::cerr << "Accept failed" << std::endl;
 				    continue;
 				}
@@ -175,6 +175,7 @@ int main() {
 	}
     bool output = server.start(port); // port to start the server
 	if (!output) {
+		server.stop();
 		return -1;
 	}
     std::cout << "Press Enter to stop server..." << std::endl;

@@ -79,7 +79,7 @@ class NetworkChecker {
 		    
 		    if (result) {
 		        
-		        std::string http_request = "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n";
+		        std::string http_request = "GET / HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
 		        
 		        int send_result = send(sock, http_request.c_str(), http_request.length(), 0); // sending http request
 		        

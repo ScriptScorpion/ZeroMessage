@@ -5,6 +5,9 @@
 #include <thread>
 #include <vector>
 #include <chrono>
+
+#define SUCCESS 0
+
 #if defined(__unix__)
     #include <sys/socket.h> // for creating socket, for binding address, for acceptance, for connecting to the server
     #include <arpa/inet.h> // convertation from string to struct
@@ -43,7 +46,9 @@ class App {
         }
         void send_to_server(const std::string &message) {
             if (allowed_to_send) {
-                send(sock_m, message.c_str(), message.length(), 0);
+                if (send(sock_m, message.c_str(), message.length(), 0) < 0) {
+                    std::exit(); // fix this TODO
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             else {
@@ -54,11 +59,11 @@ class App {
         void init (const std::string &ip, const int &port) {
             #ifdef _WIN32
                 WSADATA wsaData;
-                if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return;
+                if (WSAStartup(MAKEWORD(2, 2), &wsaData) != SUCCESS) return;
             #endif
 
             int sock = socket(AF_INET, SOCK_STREAM, 0);
-            if (sock < 0) {
+            if (sock != SUCCESS) {
                 return;
             }
 
@@ -66,7 +71,7 @@ class App {
             Server_addr.sin_port = htons(port);
             inet_pton(AF_INET, ip.c_str(), &Server_addr.sin_addr);
             sock_m = sock;
-            if (connect(sock, (sockaddr*)&Server_addr, sizeof(Server_addr)) == 0)  {
+            if (connect(sock, (sockaddr*)&Server_addr, sizeof(Server_addr)) == SUCCESS)  {
                 allowed_to_send = true;
             }
         }
@@ -122,8 +127,8 @@ int main() {
     std::cin >> ip;
     std::cout << "Enter Port of the server: ";
     std::cin >> port;
-    if (!std::cin) {
-        std::cerr << "Error: port can be only number \n";
+    if (!std::cin || port <= 0) {
+        std::cerr << "Error: port can be only number greater than 0 \n";
         return -1;
     }
     std::cin.ignore(); // remove '\n' character from buffer 
