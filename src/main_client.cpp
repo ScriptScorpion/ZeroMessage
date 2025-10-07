@@ -8,17 +8,17 @@
 
 #define SUCCESS 0
 
-#ifdef __unix__
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    const char *clear = "cls";
+#else
     #define INVALID_SOCKET -1
     #define SOCKET_ERROR -1
     #include <sys/socket.h> // for creating socket, for binding address, for acceptance, for connecting to the server
     #include <arpa/inet.h> // convertation from string to struct
     #include <unistd.h> // system calls: close socket, send data, receive data.
     const char *clear = "clear";
-#else
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-    const char *clear = "cls";
 #endif
 std::string string_id() {
     srand(time(NULL));
