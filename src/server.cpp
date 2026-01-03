@@ -160,7 +160,7 @@ class ChatServer {
 };
 
 int main() {
-     ChatServer server;
+    ChatServer server;
 	int port = 0;
 	std::string ip = "";
 	std::cout << "Enter IP on which to start the server: ";
@@ -172,11 +172,11 @@ int main() {
 		return -1;
 	}
 	std::cin.ignore(); // remove '\n' character from buffer
-     bool output = server.start(ip, port); // port to start the server
+    bool output = server.start(ip, port); // port to start the server
 	if (!output) {
 		return -1;
 	}
-     std::cout << "Press Enter to stop server..." << std::endl;
+    std::cout << "Press Enter to stop server..." << std::endl;
 	std::cin.get();
-     return 0;
+    return 0;
 }
