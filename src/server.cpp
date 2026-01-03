@@ -4,6 +4,8 @@
 #include <thread>
 #include <cstring>
 #include <algorithm>
+#include <mutex>
+#include <chrono>
 
 #define SUCCESS 0
 
@@ -26,11 +28,10 @@ class ChatServer {
 	    int Server_socket = INVALID_SOCKET;
 	    std::vector<int> clients {};
 		std::atomic <bool> running = false;
-	    std::string ip_id = "";
 		std::vector <std::string> all_msgs {};
-
+		std::mutex mtx;
 	public:
-	    bool start(const int port) {
+	    bool start(const std::string &ip, const int &port) {
 			#ifdef _WIN32
 				WSADATA wsaData;
 				if (WSAStartup(MAKEWORD(2, 2), &wsaData) != SUCCESS) {
@@ -53,7 +54,7 @@ class ChatServer {
 
 			sockaddr_in Server_addr {};
 			Server_addr.sin_family = AF_INET;
-			Server_addr.sin_addr.s_addr = INADDR_ANY; // accept any IP-address (to set only connections from specific IP, type: `inet_pton(AF_INET, IP.c_str(), &Server_addr.sin_addr)`
+			inet_pton(AF_INET, ip.c_str(), &Server_addr.sin_addr);
 			Server_addr.sin_port = htons(port); // Port
 
 			if (bind(Server_socket, (sockaddr*)&Server_addr, sizeof(Server_addr)) == SOCKET_ERROR) { // this sets server IP address
@@ -61,24 +62,24 @@ class ChatServer {
 				return false;
 			}
 
-			if (listen(Server_socket, 5) == SOCKET_ERROR) {
+			if (listen(Server_socket, 5) == SOCKET_ERROR) { // 5 - amount of connections
 				std::cerr << "Listen failed" << std::endl;
 				return false;
 			}
 
 			running = true;
-			std::cout << "Server started on port " << port << " and IP 127.0.0.1" << std::endl;
+			std::cout << "Server started on port " << port << " and IP " << ip << std::endl;
 			
 			acceptConnections();
 			return true;
 	    }
-
-	    void stop() {
+		~ChatServer() {
 			running = false;
 			
 			for (int client : clients) {
 				#ifdef _WIN32
 				    closesocket(client);
+					WSACleanup();
 				#else
 				    close(client);
 				#endif
@@ -91,52 +92,19 @@ class ChatServer {
 			#else
 				close(Server_socket);
 			#endif
-			
-	    }
+		}
 
 	private:
-	    void acceptConnections() {
-			while (running) {
-				sockaddr_in Client_addr {};
-				#ifdef _WIN32
-				    int addr_len = sizeof(Client_addr);
-				#else
-				    socklen_t addr_len = sizeof(Client_addr);
-				#endif
-
-				int Client_socket = accept(Server_socket, (sockaddr*)&Client_addr, &addr_len);
-				if (Client_socket == INVALID_SOCKET) {
-				    std::cerr << "Accept failed" << std::endl;
-				     continue;
-				}
-
-				clients.push_back(Client_socket);
-
-				char ClientIP[INET_ADDRSTRLEN];
-				inet_ntop(AF_INET, &Client_addr.sin_addr, ClientIP, INET_ADDRSTRLEN);
-				uint16_t IP_port = ntohs(Client_addr.sin_port);
-				std::cout << "Client connected: " << ClientIP << ":" << IP_port << std::endl;
-				ip_id += (ClientIP);
-				ip_id += ':'; 
-				ip_id += std::to_string(IP_port);
-				std::thread ClientThread(&ChatServer::handleClient, this, Client_socket);
-				ClientThread.detach();
-			}
-	    }
-
-	    void handleClient(const int Client_socket) {
+		void handleClient(const int &Client_socket, const std::string &ip_id) {
 			char buffer[1024];
 			while (running) {
 				int BytesReceived = recv(Client_socket, buffer, sizeof(buffer) - 1, 0);
-				
 				if (BytesReceived <= 0) {
 				    break;
 				}
-				
 				buffer[BytesReceived] = '\0';
 				std::cout << buffer << std::endl; // message	
 				all_msgs.push_back(buffer);
-
 				broadcastMessage(Client_socket);
 			}
 
@@ -144,45 +112,71 @@ class ChatServer {
 			
 			#ifdef _WIN32
 				closesocket(Client_socket);
+				WSACleanup();
 			#else
 				close(Client_socket);
 			#endif
 			std::cout << "Client disconnected: " << ip_id << std::endl;
-			ip_id.clear();
 	    }
 
-	    void broadcastMessage(const int SenderSocket) {
+	    void broadcastMessage(const int &SenderSocket) {
 			std::string combined = "";
 			for (const int &client : clients) {
 				if (SenderSocket != client) { 
-					for (const std::string &s : all_msgs) {
+					for (const std::string &s : all_msgs) { // sending in one line without spaces
 						combined += s;
 						combined += ' ';
 					}
-					send(SenderSocket, combined.c_str(), combined.length(), 0);
+					send(client, combined.c_str(), combined.length(), 0);
 				}
 			}
 
 	    }
+	    void acceptConnections() {
+			sockaddr_in Client_addr {};
+			#ifdef _WIN32
+				int addr_len = sizeof(Client_addr);
+			#else
+				socklen_t addr_len = sizeof(Client_addr);
+			#endif
+			std::lock_guard<std::mutex> lock(mtx);
+			while (running) {
+				int Client_socket = accept(Server_socket, (sockaddr*)&Client_addr, &addr_len);
+				if (Client_socket == INVALID_SOCKET) {
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					continue;
+				}
+				clients.push_back(Client_socket);
+
+				char ClientIP[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, &Client_addr.sin_addr, ClientIP, INET_ADDRSTRLEN);
+				uint16_t IP_port = ntohs(Client_addr.sin_port);
+				std::cout << "Client connected: " << ClientIP << ":" << IP_port << std::endl;
+				std::string ip_id = std::string(ClientIP) + ":" + std::to_string(IP_port);
+				std::thread Client_thread(&ChatServer::handleClient, this,  Client_socket, ip_id);
+				Client_thread.detach();
+			}
+	    }
 };
 
 int main() {
-    ChatServer server;
+     ChatServer server;
 	int port = 0;
+	std::string ip = "";
+	std::cout << "Enter IP on which to start the server: ";
+	std::cin >> ip;
 	std::cout << "Enter port on which to start the server: ";
 	std::cin >> port;
 	if (!std::cin || port <= 0) {
 		std::cerr << "Error: Invalid input" << std::endl;
 		return -1;
 	}
-    bool output = server.start(port); // port to start the server
+	std::cin.ignore(); // remove '\n' character from buffer
+     bool output = server.start(ip, port); // port to start the server
 	if (!output) {
-		server.stop();
 		return -1;
 	}
-    std::cout << "Press Enter to stop server..." << std::endl;
+     std::cout << "Press Enter to stop server..." << std::endl;
 	std::cin.get();
-    
-    server.stop();
-    return 0;
+     return 0;
 }

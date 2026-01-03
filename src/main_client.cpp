@@ -40,10 +40,16 @@ class App {
         std::thread receive_thread;
         sockaddr_in Server_addr {};
     public:
-        void end() {
+        ~App() {
             allowed_to_send = false;
+            #ifdef _WIN32
+                closesocket(sock_m);
+                WSACleanup();
+            #else
+                close(sock_m);
+            #endif
             if (receive_thread.joinable()) {
-                receive_thread.detach(); // i'm saying close this thread separately from main thread
+                receive_thread.join(); 
             }
         }
         void send_to_server(const std::string &message) {
@@ -83,6 +89,9 @@ class App {
             if (connect(sock, (sockaddr*)&Server_addr, sizeof(Server_addr)) == SUCCESS)  {
                 allowed_to_send = true;
             }
+            else {
+                allowed_to_send = false;
+            }
         }
         void create_msg(const std::string &message) {
             msg = message;
@@ -93,29 +102,28 @@ class App {
             receive_thread = std::thread([this]() { // [this] because to capture all fileds of class
                 while (allowed_to_send) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
-                    std::string all_msgs = "";
-                    char chunk[1024];
-                    int bytes_received = recv(sock_m, chunk, sizeof(chunk), 0);
+                    char message[1024];
+                    int bytes_received = recv(sock_m, message, sizeof(message)-1, 0);
                     if (bytes_received > 0) {
-                        all_msgs += chunk;
-                        for (const char &c : all_msgs) {
+                        message[bytes_received] = '\0';
+                        std::string clear_msg = message;
+                        for (const char &c : clear_msg) {
                             if ((c) == '[') {
                                 std::cout << std::endl;
                             }
                             std::cout << c;
                         }
                         std::cout << std::endl;
+                        std::cout << str_id << ": ";
+                        std::cout.flush();
                     }
                 }
             });
         }
-        int get_sock() {
-           return sock_m;
-        }
         std::string get_str_id() {
             return str_id;
         }
-};
+}instance;
 
 bool is_only_space(std::string str) {
     bool res = true;
@@ -131,7 +139,6 @@ int main() {
     std::string input = "";
     std::string ip = "";
     int port = 0;
-    App instance;
     std::cout << "Enter IP of the server: ";
     std::cin >> ip;
     std::cout << "Enter Port of the server: ";
@@ -151,14 +158,7 @@ int main() {
             break;
         }
         instance.create_msg(input);
-
+        std::cout.flush();
     }
-    instance.end();
-    #ifdef _WIN32
-        closesocket(instance.get_sock());
-        WSACleanup();
-    #else
-        close(instance.get_sock());
-    #endif
     return 0;
 }
