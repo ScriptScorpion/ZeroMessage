@@ -1,0 +1,2 @@
+INADDR_ANY - any type of local host IP.
+inet_pton(AF_INET, ip.c_str(), &sockaddr_in.sin_addr) - convert 'ip' variable to AF_INET(IPV4 IP) and store it in 'sockaddr_in.sin_addr' address.
