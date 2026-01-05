@@ -5,7 +5,6 @@
 #include <cstring>
 #include <algorithm>
 #include <mutex>
-#include <chrono>
 
 #define SUCCESS 0
 
@@ -143,7 +142,6 @@ class ChatServer {
 			while (running) {
 				int Client_socket = accept(Server_socket, (sockaddr*)&Client_addr, &addr_len);
 				if (Client_socket == INVALID_SOCKET) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 					continue;
 				}
 				clients.push_back(Client_socket);

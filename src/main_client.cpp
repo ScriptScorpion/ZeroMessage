@@ -58,7 +58,7 @@ class App {
                     std::cerr << "\nError: failed to send a message\n";
                     return;
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             else {
                 std::cerr << "\nError: failed to connect to the server\n";
@@ -101,7 +101,6 @@ class App {
         void get_msgs() {
             receive_thread = std::thread([this]() { // [this] because to capture all fileds of class
                 while (allowed_to_send) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
                     char message[1024];
                     int bytes_received = recv(sock_m, message, sizeof(message)-1, 0);
                     if (bytes_received > 0) {
